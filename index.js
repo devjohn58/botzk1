@@ -1,10 +1,10 @@
-const { default: axios } = require("axios");
 const express = require("express");
 const app = express();
 const port = 3000;
+const fs = require("fs");
 const { symbol, name, decimals, totalSupply } = require("./fetchchain");
+const { default: axios } = require("axios");
 
-const listTx = [];
 const blacklist = [
 	"0x3355df6d4c9c3035724fd0e3914de96a5a83aaf4",
 	"0x0e97c7a0f8b2c9885c8ac9fc6136e829cbc21d42",
@@ -61,6 +61,10 @@ async function getpair() {
 			arraydata.slice(34, 74),
 		];
 		if (arr?.[0] === "0xb2e916d6") {
+			const data = fs.readFileSync("./list.json", "utf8");
+			const dataStr = JSON.parse(data)?.list;
+			const dataArr = dataStr?.split(",");
+
 			let isSend = false;
 			const owner = l.initiatorAddress;
 			const contractToken =
@@ -70,12 +74,21 @@ async function getpair() {
 			if (blacklist.includes(contractToken)) {
 				return;
 			}
-			if (!listTx.includes(contractToken)) {
-				listTx.push(contractToken);
+			if (!dataArr.includes(contractToken)) {
+				//handle to list
+				dataArr.push(contractToken);
 				isSend = true;
-				if (listTx.length > 100) {
-					listTx.shift();
+				if (dataArr.length > 100) {
+					dataArr.shift();
 				}
+				const datawrite = JSON.stringify(
+					{ list: dataArr.join(",") },
+					null,
+					4
+				);
+				fs.writeFileSync("./list.json", datawrite, "utf8");
+
+				// get info token
 				const _symbol = await symbol(contractToken);
 				const _name = await name(contractToken);
 				const _decimals = await decimals(contractToken);
@@ -95,6 +108,8 @@ async function getpair() {
 					) /
 					10 ** 18
 				).toFixed(4);
+
+				//send message to telegram
 				if (isSend) {
 					await sendMessage(
 						contractToken,
@@ -118,6 +133,10 @@ async function getaddlp() {
 	);
 	res.data?.list?.forEach(async (l) => {
 		if (l.data.calldata) {
+			const data = fs.readFileSync("./list.json", "utf8");
+			const dataStr = JSON.parse(data)?.list;
+			const dataArr = dataStr?.split(",");
+
 			let isSend = false;
 			const owner = l.initiatorAddress;
 			const contractToken = "0x" + l.data.calldata.slice(34, 74);
@@ -125,12 +144,21 @@ async function getaddlp() {
 				return;
 			}
 			if (l.data.calldata.slice(0, 10) === "0x3a8e53ff") {
-				if (!listTx.includes(contractToken)) {
-					listTx.push(contractToken);
+				if (!dataArr.includes(contractToken)) {
+					//handle to list
+					dataArr.push(contractToken);
 					isSend = true;
-					if (listTx.length > 100) {
-						listTx.shift();
+					if (dataArr.length > 100) {
+						dataArr.shift();
 					}
+					const datawrite = JSON.stringify(
+						{ list: dataArr.join(",") },
+						null,
+						4
+					);
+					fs.writeFileSync("./list.json", datawrite, "utf8");
+
+					// get info token
 					const _symbol = await symbol(contractToken);
 					const _name = await name(contractToken);
 					const _decimals = await decimals(contractToken);
@@ -172,8 +200,12 @@ async function func() {
 	console.clear();
 	await getpair();
 	await getaddlp();
-	console.log(listTx.length);
-	console.log(listTx);
+	console.log("==============================================");
+	const data = fs.readFileSync("./list.json", "utf8");
+	const dataStr = JSON.parse(data)?.list;
+	const dataArr = dataStr?.split(",");
+	console.log(dataArr.length);
+	console.log(dataArr);
 	console.log("==============================================");
 	setTimeout(() => {
 		func();
