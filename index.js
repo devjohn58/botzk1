@@ -4,11 +4,14 @@ const app = express();
 const port = 3000;
 const { symbol, name, decimals, totalSupply } = require("./fetchchain");
 
-let start = false;
 const listTx = [];
 const blacklist = [
-	// "0x3355df6d4c9c3035724fd0e3914de96a5a83aaf4",
-	// "0x0e97c7a0f8b2c9885c8ac9fc6136e829cbc21d42",
+	"0x3355df6d4c9c3035724fd0e3914de96a5a83aaf4",
+	"0x0e97c7a0f8b2c9885c8ac9fc6136e829cbc21d42",
+	"0x90eea899185105d583d04b7bdbfb672fce902a53",
+	"0xc8ec5b0627c794de0e4ea5d97ad9a556b361d243",
+	"0x81d60e05c805c27ad5cdb63948c3c7027d3acfb9",
+	"0xbfb4b5616044eded03e5b1ad75141f0d9cb1499b",
 ];
 
 async function sendMessage(
@@ -46,8 +49,70 @@ async function sendMessage(
 	}
 }
 
-async function func() {
-	console.clear();
+async function getpair() {
+	const res = await axios(
+		"https://zksync2-mainnet-explorer.zksync.io/transactions?limit=10&direction=older&contractAddress=0x40be1cBa6C5B47cDF9da7f963B6F761F4C60627D"
+	);
+	res.data?.list?.forEach(async (l) => {
+		const arraydata = l?.data?.calldata.slice(0, 138);
+		const arr = [
+			arraydata.slice(0, 10),
+			arraydata.slice(98, 138),
+			arraydata.slice(34, 74),
+		];
+		if (arr?.[0] === "0xb2e916d6") {
+			let isSend = false;
+			const owner = l.initiatorAddress;
+			const contractToken =
+				arr?.[1] === "5aea5775959fbc2557cc8789bc1bf90a239d9a91"
+					? "0x" + arr[2]
+					: "0x" + arr[1];
+			if (blacklist.includes(contractToken)) {
+				return;
+			}
+			if (!listTx.includes(contractToken)) {
+				listTx.push(contractToken);
+				isSend = true;
+				if (listTx.length > 100) {
+					listTx.shift();
+				}
+				const _symbol = await symbol(contractToken);
+				const _name = await name(contractToken);
+				const _decimals = await decimals(contractToken);
+				const supplyres = await totalSupply(contractToken);
+				const _supply = Number(
+					supplyres.slice(0, supplyres.length - Number(_decimals))
+				).toLocaleString();
+				const getBalance = await axios(
+					"https://zksync2-mainnet-explorer.zksync.io/address/" +
+						owner
+				);
+				const _balance = (
+					parseInt(
+						getBalance.data?.info?.balances[
+							"0x0000000000000000000000000000000000000000"
+						]?.balance ?? 0
+					) /
+					10 ** 18
+				).toFixed(4);
+				if (isSend) {
+					await sendMessage(
+						contractToken,
+						_name,
+						_symbol,
+						owner,
+						_balance,
+						_supply,
+						_decimals
+					);
+					isSend = false;
+				}
+			}
+		}
+	});
+}
+
+async function getaddlp() {
 	const res = await axios(
 		"https://zksync2-mainnet-explorer.zksync.io/transactions?limit=50&direction=older&contractAddress=0x8B791913eB07C32779a16750e3868aA8495F5964"
 	);
@@ -85,7 +150,6 @@ async function func() {
 						) /
 						10 ** 18
 					).toFixed(4);
-					console.log(_balance);
 					if (isSend) {
 						await sendMessage(
 							contractToken,
@@ -102,14 +166,19 @@ async function func() {
 			}
 		}
 	});
+}
+
+async function func() {
+	console.clear();
+	await getpair();
+	await getaddlp();
 	console.log(listTx.length);
 	console.log(listTx);
 	console.log("==============================================");
 	setTimeout(() => {
 		func();
-	}, 1000);
+	}, 3000);
 }
-
 app.listen(port, function (error) {
 	if (error) {
 		console.log("Something went wrong");
