@@ -36,7 +36,8 @@ async function sendMessage(
 📈  Chart:     [Dexscreener chart](https://dexscreener.com/zksync/${contractToken})
 🥮  Supply:    ${supply_} (+${decimals_} decimals)
 
-    Join us at: `,
+🙆‍♂  Join us:    @zkDetector
+☎️  Contact us: @davezonk | @maynardkane`,
 		parse_mode: "MarkDown",
 		disable_web_page_preview: 1,
 	};
