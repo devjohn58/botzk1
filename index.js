@@ -52,7 +52,7 @@ async function sendMessage(
 
 async function getpair() {
 	const res = await axios(
-		"https://zksync2-mainnet-explorer.zksync.io/transactions?limit=10&direction=older&contractAddress=0x40be1cBa6C5B47cDF9da7f963B6F761F4C60627D"
+		"https://zksync2-mainnet-explorer.zksync.io/transactions?limit=30&direction=older&contractAddress=0x40be1cBa6C5B47cDF9da7f963B6F761F4C60627D"
 	);
 	res.data?.list?.forEach(async (l) => {
 		const arraydata = l?.data?.calldata.slice(0, 138);
@@ -199,18 +199,23 @@ async function getaddlp() {
 
 async function func() {
 	console.clear();
-	await getpair();
-	await getaddlp();
-	console.log("==============================================");
-	const data = fs.readFileSync("./list.json", "utf8");
-	const dataStr = JSON.parse(data)?.list;
-	const dataArr = dataStr?.split(",");
-	console.log(dataArr.length);
-	console.log(dataArr);
-	console.log("==============================================");
-	setTimeout(() => {
-		func();
-	}, 3000);
+	try {
+		await getpair();
+		await getaddlp();
+		console.log("==============================================");
+		const data = fs.readFileSync("./list.json", "utf8");
+		const dataStr = JSON.parse(data)?.list;
+		const dataArr = dataStr?.split(",");
+		console.log(dataArr.length);
+		console.log("==============================================");
+		setTimeout(() => {
+			func();
+		}, 3000);
+	} catch (error) {
+		setTimeout(() => {
+			func();
+		}, 10000);
+	}
 }
 app.listen(port, function (error) {
 	if (error) {
