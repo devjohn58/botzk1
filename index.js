@@ -34,10 +34,7 @@ async function sendMessage(
 💵  Balance:   ${balance} ETH
 🐳  Buy here:  [Buy via Mute](https://app.mute.io/swap")
 📈  Chart:     [Dexscreener chart](https://dexscreener.com/zksync/${contractToken})
-🥮  Supply:    ${supply_} (+${decimals_} decimals)
-
-🙆‍♂  Join us:    @zkDetector
-☎️  Contact us: @davezonk | @maynardkane`,
+🥮  Supply:    ${supply_} (+${decimals_} decimals)`,
 		parse_mode: "MarkDown",
 		disable_web_page_preview: 1,
 	};
